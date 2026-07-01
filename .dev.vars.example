@@ -18,3 +18,7 @@ ALLOWED_USER_IDS="123456789,987654321"
 # Mapeo user_id -> nombre corto. En producción se carga como secret
 # (wrangler secret put USER_MAP).
 USER_MAP="123456789:juli,987654321:mili"
+
+# Chat destino del recordatorio diario (id del grupo, arranca con -100...).
+# En producción se carga como secret (wrangler secret put REMINDER_CHAT_ID).
+REMINDER_CHAT_ID="-1001234567890"

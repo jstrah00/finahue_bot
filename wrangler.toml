@@ -4,6 +4,13 @@ compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 # ---------------------------------------------------------------------------
+# Cron trigger: recordatorio diario para cargar los gastos del día.
+# 00:30 UTC == 21:30 ART (Argentina es UTC-3 todo el año, sin DST).
+# ---------------------------------------------------------------------------
+[triggers]
+crons = ["30 0 * * *"]
+
+# ---------------------------------------------------------------------------
 # KV namespace para estado transitorio (confirmaciones ✅/❌, formulario /cuota)
 # y cache del access token de Google.
 #
@@ -25,6 +32,7 @@ preview_id = "8d60f4ca78414ebd869e9588c98a1662"
 #   SHEET_ID
 #   ALLOWED_USER_IDS            (coma-separado, ej. "123456789,987654321")
 #   USER_MAP                    (mapeo id->nombre, ej. "111:juli,222:mili")
+#   REMINDER_CHAT_ID            (id del grupo destino del recordatorio diario)
 #
 # USER_MAP se maneja como secret para no versionar los user_id reales.
 # Para dev local, poné todo esto en .dev.vars (ver .dev.vars.example).

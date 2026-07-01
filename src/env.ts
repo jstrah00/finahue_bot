@@ -11,6 +11,8 @@ export interface Env {
   SHEET_ID: string;
   ALLOWED_USER_IDS: string;
   USER_MAP: string;
+  /** Chat destino del recordatorio diario (id del grupo, ej. "-1001234567890"). */
+  REMINDER_CHAT_ID: string;
 }
 
 /** Parsea `ALLOWED_USER_IDS` ("123,456") a un set de números. */

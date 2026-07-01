@@ -137,10 +137,14 @@ wrangler secret put GOOGLE_PRIVATE_KEY
 wrangler secret put SHEET_ID
 wrangler secret put ALLOWED_USER_IDS      # ej: 123456789,987654321
 wrangler secret put USER_MAP              # ej: 123456789:juli,987654321:mili
+wrangler secret put REMINDER_CHAT_ID      # id del grupo, ej: -5488004217
 ```
 
-`USER_MAP` (mapeo `id:nombre`) se carga como secret para no versionar los
-`user_id` reales en el repo.
+`USER_MAP` (mapeo `id:nombre`) y `REMINDER_CHAT_ID` (id del grupo) se cargan como
+secrets para no versionar los IDs reales en el repo.
+
+Para obtener el `REMINDER_CHAT_ID`: agregá el bot al grupo, escribí cualquier
+mensaje ahí y mirá el `chat.id` en el update (negativo, ej. `-5488004217`).
 
 > `TELEGRAM_WEBHOOK_SECRET` es un string largo y aleatorio que vos elegís; Telegram
 > lo manda en el header `X-Telegram-Bot-Api-Secret-Token` y el bot lo valida en
@@ -163,6 +167,10 @@ comandos (`setMyCommands`). Lee `TELEGRAM_BOT_TOKEN` y `TELEGRAM_WEBHOOK_SECRET`
 
 En el grupo: `/nuevomes` para crear el mes, cargá presupuestos en el Resumen a
 mano, y empezá a mandar gastos. `/help` explica todo.
+
+Todos los días a las **21:30 ART** el bot manda al grupo (`REMINDER_CHAT_ID`) un
+recordatorio para cargar los gastos del día. El cron está en `wrangler.toml`
+(`[triggers] crons = ["30 0 * * *"]`, o sea 00:30 UTC).
 
 ---
 
@@ -196,7 +204,8 @@ npm run typecheck   # tsc --noEmit
 
 ## Arquitectura
 
-- `src/index.ts` — webhook, seguridad (secret token + allowlist), routing.
+- `src/index.ts` — webhook, seguridad (secret token + allowlist), routing y el
+  cron `scheduled` (recordatorio diario 21:30 ART → `REMINDER_CHAT_ID`).
 - `src/google/` — JWT RS256 (`SubtleCrypto`) + access token (cache en KV ~50 min).
 - `src/sheets/` — cliente REST, mapeo de columnas por header, Config, meses,
   Detalle, Resumen, Cuotas.

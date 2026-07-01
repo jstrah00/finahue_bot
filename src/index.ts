@@ -56,7 +56,34 @@ export default {
     }
     return new Response("ok");
   },
+
+  /**
+   * Cron trigger (ver wrangler.toml): recordatorio diario a las 21:30 ART.
+   * Se manda al chat configurado en REMINDER_CHAT_ID (el id del grupo).
+   */
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(sendDailyReminder(env));
+  },
 };
+
+const DAILY_REMINDER_TEXT = "Recordá agregar los gastos que hiciste hoy!";
+
+async function sendDailyReminder(env: Env): Promise<void> {
+  const chatId = Number(env.REMINDER_CHAT_ID);
+  if (!Number.isFinite(chatId) || chatId === 0) {
+    console.error("REMINDER_CHAT_ID no configurado o inválido:", env.REMINDER_CHAT_ID);
+    return;
+  }
+  const ctx = createCtx(env);
+  try {
+    await ctx.api.sendMessage(chatId, DAILY_REMINDER_TEXT);
+  } catch (err) {
+    console.error(
+      `Fallo al mandar recordatorio a ${chatId}:`,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+}
 
 async function dispatch(ctx: Ctx, update: TelegramUpdate): Promise<void> {
   if (update.callback_query) return dispatchCallback(ctx, update.callback_query);
