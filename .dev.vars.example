@@ -1,0 +1,20 @@
+# Copiá este archivo a `.dev.vars` (que está gitignoreado) y completá los valores.
+# `wrangler dev` los inyecta como secrets/env vars durante el desarrollo local.
+# Los mismos valores deben cargarse en producción con `wrangler secret put <NOMBRE>`.
+
+TELEGRAM_BOT_TOKEN="123456789:AA..."
+TELEGRAM_WEBHOOK_SECRET="un-string-largo-y-random"
+
+GOOGLE_SERVICE_ACCOUNT_EMAIL="finahue-bot@tu-proyecto.iam.gserviceaccount.com"
+# La private key de la Service Account. Pegala COMPLETA incluyendo los -----BEGIN/END-----.
+# En .dev.vars podés dejar los saltos de línea como \n literales (el código los normaliza).
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQ...\n-----END PRIVATE KEY-----\n"
+
+SHEET_ID="1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+
+# user_id de Telegram de Juli y Mili, coma-separado.
+ALLOWED_USER_IDS="123456789,987654321"
+
+# Mapeo user_id -> nombre corto. En producción se carga como secret
+# (wrangler secret put USER_MAP).
+USER_MAP="123456789:juli,987654321:mili"

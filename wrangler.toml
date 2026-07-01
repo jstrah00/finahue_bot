@@ -1,0 +1,31 @@
+name = "finahue-bot"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------
+# KV namespace para estado transitorio (confirmaciones ✅/❌, formulario /cuota)
+# y cache del access token de Google.
+#
+# Crealo con:   wrangler kv namespace create STATE
+# y pegá el id devuelto acá (reemplazá el placeholder).
+# Para dev local podés crear uno de preview:  wrangler kv namespace create STATE --preview
+# ---------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "STATE"
+id = "REEMPLAZAR_CON_ID_DEL_KV_NAMESPACE"
+preview_id = "REEMPLAZAR_CON_PREVIEW_ID_DEL_KV_NAMESPACE"
+
+# ---------------------------------------------------------------------------
+# SECRETS (NO van acá; se cargan con `wrangler secret put <NOMBRE>`):
+#   TELEGRAM_BOT_TOKEN
+#   TELEGRAM_WEBHOOK_SECRET
+#   GOOGLE_SERVICE_ACCOUNT_EMAIL
+#   GOOGLE_PRIVATE_KEY          (con los \n reales; ver README)
+#   SHEET_ID
+#   ALLOWED_USER_IDS            (coma-separado, ej. "123456789,987654321")
+#   USER_MAP                    (mapeo id->nombre, ej. "111:juli,222:mili")
+#
+# USER_MAP se maneja como secret para no versionar los user_id reales.
+# Para dev local, poné todo esto en .dev.vars (ver .dev.vars.example).
+# ---------------------------------------------------------------------------
