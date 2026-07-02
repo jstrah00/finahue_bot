@@ -20,7 +20,6 @@ import {
   PREFIX_SUBCAT,
 } from "./handlers/expense";
 import { handleCuotaText, handleCuotaCallback, PREFIX_CUOTA_FORM } from "./handlers/cuota";
-import { handleCargarCuotasCallback, PREFIX_CARGAR_CUOTAS } from "./handlers/cargarcuotas";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -121,8 +120,6 @@ async function dispatchCallback(ctx: Ctx, cq: TelegramCallbackQuery): Promise<vo
       return handleSubcatCallback(ctx, cq, parts);
     case PREFIX_CUOTA_FORM:
       return handleCuotaCallback(ctx, cq, parts);
-    case PREFIX_CARGAR_CUOTAS:
-      return handleCargarCuotasCallback(ctx, cq, parts);
     default:
       await ctx.api.answerCallbackQuery(cq.id);
   }

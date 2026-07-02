@@ -53,10 +53,11 @@ como detalle no se confunde con la categoría `salidas`.
 ## Comandos
 
 - `/nuevomes` — crea las hojas `YYYY-MM Detalle` y `YYYY-MM Resumen` del mes
-  actual (con fórmulas y categorías precargadas). No inserta cuotas.
-- `/cargarcuotas` — muestra las cuotas activas del mes, pide confirmación e
-  inserta cada una en el Detalle, avanzando los contadores.
-- `/cuota` — alta guiada (formulario) de una cuota nueva.
+  actual (con fórmulas y categorías precargadas) e inserta automáticamente las
+  cuotas activas, avanzando sus contadores. Es idempotente: el mes se crea una
+  sola vez, así que las cuotas nunca se duplican.
+- `/cuota` — alta guiada (formulario) de una cuota nueva. Al final elegís si la
+  cuota entra en el mes actual (si ya existe) o el mes que viene.
 - `/resumen` — presupuesto vs gastado de todo el mes.
 - `/categoria <nombre> [YYYY-MM]` — detalle de una categoría (mes actual o pasado).
 - `/gastos` — todos los gastos del mes.
@@ -210,8 +211,7 @@ npm run typecheck   # tsc --noEmit
 - `src/sheets/` — cliente REST, mapeo de columnas por header, Config, meses,
   Detalle, Resumen, Cuotas.
 - `src/parser/expense.ts` — parser de gastos (reconocimiento no posicional).
-- `src/handlers/` — gastos, comandos, `/nuevomes`, `/cargarcuotas`, `/cuota`,
-  consultas.
+- `src/handlers/` — gastos, comandos, `/nuevomes`, `/cuota`, consultas.
 - `src/state/kv.ts` — estado transitorio en Workers KV con TTL (confirmaciones y
   formulario de cuotas). No es una base de datos: toda la persistencia vive en el
   Sheet.

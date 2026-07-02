@@ -3,7 +3,6 @@
 import type { Ctx } from "../ctx";
 import type { TelegramMessage } from "../telegram/types";
 import { handleNuevoMes } from "./nuevomes";
-import { handleCargarCuotas } from "./cargarcuotas";
 import { startCuotaForm } from "./cuota";
 import {
   handleCategorias,
@@ -18,8 +17,7 @@ import {
 
 /** Lista de comandos para setMyCommands (usado por register-webhook). */
 export const BOT_COMMANDS = [
-  { command: "nuevomes", description: "Crear las hojas del mes actual" },
-  { command: "cargarcuotas", description: "Insertar las cuotas activas del mes" },
+  { command: "nuevomes", description: "Crear el mes actual e insertar las cuotas activas" },
   { command: "cuota", description: "Alta guiada de una cuota nueva" },
   { command: "resumen", description: "Presupuesto vs gastado del mes" },
   { command: "categoria", description: "Detalle de una categoría (<nombre> [YYYY-MM])" },
@@ -45,8 +43,6 @@ export async function handleCommand(
       return handleHelp(ctx, chatId);
     case "nuevomes":
       return handleNuevoMes(ctx, chatId);
-    case "cargarcuotas":
-      return handleCargarCuotas(ctx, chatId);
     case "cuota":
       return startCuotaForm(ctx, chatId, msg.from!.id);
     case "categorias":

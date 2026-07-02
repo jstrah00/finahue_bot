@@ -8,15 +8,17 @@
  */
 
 import type { Ctx } from "../ctx";
-import type { TelegramMessage, TelegramCallbackQuery } from "../telegram/types";
-import type { ConfigData, Quien } from "../domain";
+import type { TelegramMessage, TelegramCallbackQuery, InlineKeyboard } from "../telegram/types";
+import type { ConfigData, Cuota, Quien } from "../domain";
 import { readConfig } from "../sheets/config-sheet";
-import { appendCuota } from "../sheets/cuotas";
+import { appendCuota, cuotaToExpense } from "../sheets/cuotas";
+import { appendExpense } from "../sheets/detalle";
+import { monthExists } from "../sheets/month";
 import { parseArs, formatArs } from "../format/money";
 import { escapeMd } from "../format/md";
 import { optionsKeyboard } from "../telegram/keyboards";
 import { newToken, type CuotaForm } from "../state/kv";
-import { todayIso } from "../util/date";
+import { currentMonthKey, todayIso } from "../util/date";
 import { subcatsOf } from "../parser/expense";
 import { reportError } from "./errors";
 
@@ -41,7 +43,7 @@ export async function startCuotaForm(ctx: Ctx, chatId: number, userId: number): 
   await ctx.state.putCuotaForm(userId, form);
   await ctx.api.sendMessage(
     chatId,
-    "🧾 *Nueva cuota* (paso 1/8)\n\n¿Descripción? (ej. `Starlink`, `Zapatillas Juli`)",
+    "🧾 *Nueva cuota* (paso 1/9)\n\n¿Descripción? (ej. `Starlink`, `Zapatillas Juli`)",
     { parseMode: "Markdown" },
   );
 }
@@ -59,7 +61,7 @@ export async function handleCuotaText(ctx: Ctx, msg: TelegramMessage, form: Cuot
         form.descripcion = text;
         form.step = "montoCuota";
         await ctx.state.putCuotaForm(userId, form);
-        await ctx.api.sendMessage(chatId, "💰 *Paso 2/8* — ¿Monto de cada cuota? (ej. `15.000`)", {
+        await ctx.api.sendMessage(chatId, "💰 *Paso 2/9* — ¿Monto de cada cuota? (ej. `15.000`)", {
           parseMode: "Markdown",
         });
         return;
@@ -76,7 +78,7 @@ export async function handleCuotaText(ctx: Ctx, msg: TelegramMessage, form: Cuot
         form.step = "categoria";
         await ctx.state.putCuotaForm(userId, form);
         const config = await readConfig(ctx.sheets);
-        await ctx.api.sendMessage(chatId, "📂 *Paso 3/8* — Elegí la categoría:", {
+        await ctx.api.sendMessage(chatId, "📂 *Paso 3/9* — Elegí la categoría:", {
           parseMode: "Markdown",
           keyboard: optionsKeyboard(PREFIX_CUOTA_FORM, "cat", categoriasUnicas(config), 3),
         });
@@ -95,7 +97,7 @@ export async function handleCuotaText(ctx: Ctx, msg: TelegramMessage, form: Cuot
         await ctx.state.putCuotaForm(userId, form);
         await ctx.api.sendMessage(
           chatId,
-          `🔢 *Paso 8/8* — ¿En qué cuota vas? (1 a ${n}). Si recién arranca, poné \`1\`.`,
+          `🔢 *Paso 8/9* — ¿En qué cuota vas? (1 a ${n}). Si recién arranca, poné \`1\`.`,
           { parseMode: "Markdown" },
         );
         return;
@@ -107,7 +109,13 @@ export async function handleCuotaText(ctx: Ctx, msg: TelegramMessage, form: Cuot
           return;
         }
         form.cuotaActual = n;
-        await finalizeCuota(ctx, form);
+        form.step = "cuando";
+        await ctx.state.putCuotaForm(userId, form);
+        await ctx.api.sendMessage(
+          chatId,
+          `🗓️ *Paso 9/9* — ¿Cuándo entra la cuota ${n}/${form.totalCuotas}?`,
+          { parseMode: "Markdown", keyboard: cuandoKeyboard() },
+        );
         return;
       }
       default:
@@ -141,6 +149,18 @@ export async function handleCuotaCallback(ctx: Ctx, cq: TelegramCallbackQuery, p
 
   try {
     await ctx.api.answerCallbackQuery(cq.id);
+
+    if (field === "cuando") {
+      const cuando = value === "este" ? "este" : "prox";
+      await ctx.api.editMessageText(
+        chatId,
+        messageId,
+        cuando === "este" ? "🗓️ Entra este mes." : "🗓️ Entra el mes que viene.",
+      );
+      await finalizeCuota(ctx, form, cuando);
+      return;
+    }
+
     const config = await readConfig(ctx.sheets);
 
     if (field === "cat") {
@@ -183,7 +203,7 @@ export async function handleCuotaCallback(ctx: Ctx, cq: TelegramCallbackQuery, p
       await ctx.api.editMessageText(
         chatId,
         messageId,
-        `👤 Quién: *${escapeMd(value)}*\n\n🔢 *Paso 7/8* — ¿Total de cuotas? (ej. \`12\`)`,
+        `👤 Quién: *${escapeMd(value)}*\n\n🔢 *Paso 7/9* — ¿Total de cuotas? (ej. \`12\`)`,
         { parseMode: "Markdown" },
       );
       return;
@@ -194,10 +214,38 @@ export async function handleCuotaCallback(ctx: Ctx, cq: TelegramCallbackQuery, p
   }
 }
 
-/** Escribe la cuota en la hoja y cierra el formulario. */
-async function finalizeCuota(ctx: Ctx, form: CuotaForm): Promise<void> {
+/** Teclado del paso final: ¿cuándo entra la primera cuota? */
+function cuandoKeyboard(): InlineKeyboard {
+  return [
+    [
+      { text: "📅 Este mes", callback_data: `${PREFIX_CUOTA_FORM}:cuando:este` },
+      { text: "⏭️ El mes que viene", callback_data: `${PREFIX_CUOTA_FORM}:cuando:prox` },
+    ],
+  ];
+}
+
+/**
+ * Escribe la cuota en la hoja y cierra el formulario.
+ *
+ * `cuando === "este"`: si el mes actual ya existe, inserta el gasto de la cuota N
+ * en el Detalle y guarda `cuota_actual = N+1` (cerrándola si supera el total). Si el
+ * mes aún no existe, no inserta y guarda `cuota_actual = N` para que lo tome el
+ * próximo /nuevomes.
+ * `cuando === "prox"`: no inserta; guarda `cuota_actual = N` (entra con el próximo mes).
+ */
+async function finalizeCuota(ctx: Ctx, form: CuotaForm, cuando: "este" | "prox"): Promise<void> {
   const chatId = form.chatId;
-  await appendCuota(ctx.sheets, {
+  const n = form.cuotaActual!;
+  const total = form.totalCuotas!;
+  const mes = currentMonthKey();
+
+  const mesExiste = await monthExists(ctx.sheets, mes);
+  const insertarAhora = cuando === "este" && mesExiste;
+
+  const cuotaActualGuardada = insertarAhora ? n + 1 : n;
+  const cerrada = insertarAhora && cuotaActualGuardada > total;
+
+  const cuota: Omit<Cuota, "rowNumber"> = {
     id: newToken(),
     descripcion: form.descripcion!,
     montoCuota: form.montoCuota!,
@@ -205,27 +253,39 @@ async function finalizeCuota(ctx: Ctx, form: CuotaForm): Promise<void> {
     subcategoria: form.subcategoria!,
     medioPago: form.medioPago!,
     quien: form.quien!,
-    cuotaActual: form.cuotaActual!,
-    totalCuotas: form.totalCuotas!,
-    estado: "activa",
+    cuotaActual: cuotaActualGuardada,
+    totalCuotas: total,
+    estado: cerrada ? "cerrada" : "activa",
     fechaAlta: todayIso(),
-  });
+  };
+
+  if (insertarAhora) {
+    // El gasto ocupa la cuota N (con la nota correcta) antes de avanzar el contador.
+    await appendExpense(ctx.sheets, mes, cuotaToExpense({ ...cuota, cuotaActual: n }, todayIso()));
+  }
+  await appendCuota(ctx.sheets, cuota);
   await ctx.state.delCuotaForm(form.userId);
 
-  const restantes = form.totalCuotas! - form.cuotaActual! + 1;
-  await ctx.api.sendMessage(
-    chatId,
-    [
-      "✅ *Cuota dada de alta*",
-      "",
-      `🧾 ${escapeMd(form.descripcion!)}`,
-      `💰 ${formatArs(form.montoCuota!)} × cuota`,
-      `📂 ${escapeMd(form.categoria!)} › ${escapeMd(form.subcategoria!)}`,
-      `💳 ${escapeMd(form.medioPago!)} · 👤 ${escapeMd(form.quien!)}`,
-      `🔢 Vas por la cuota ${form.cuotaActual}/${form.totalCuotas} (${restantes} restantes)`,
-      "",
-      "ℹ️ Se insertará en los *próximos* meses cuando corras /cargarcuotas. No se agrega retroactivamente a meses ya creados.",
-    ].join("\n"),
-    { parseMode: "Markdown" },
-  );
+  const cabecera = [
+    "✅ *Cuota dada de alta*",
+    "",
+    `🧾 ${escapeMd(form.descripcion!)}`,
+    `💰 ${formatArs(form.montoCuota!)} × cuota`,
+    `📂 ${escapeMd(form.categoria!)} › ${escapeMd(form.subcategoria!)}`,
+    `💳 ${escapeMd(form.medioPago!)} · 👤 ${escapeMd(form.quien!)}`,
+    "",
+  ];
+
+  let estado: string;
+  if (insertarAhora) {
+    estado = cerrada
+      ? `🔢 Inserté la cuota ${n}/${total} en *${mes}* y la cerré (era la última). 🏁`
+      : `🔢 Inserté la cuota ${n}/${total} en *${mes}*. La próxima entra con el /nuevomes que viene.`;
+  } else if (cuando === "este") {
+    estado = `📅 El mes *${mes}* todavía no existe: la cuota ${n}/${total} se insertará cuando corras /nuevomes.`;
+  } else {
+    estado = `⏭️ La cuota ${n}/${total} entra el mes que viene, al correr /nuevomes.`;
+  }
+
+  await ctx.api.sendMessage(chatId, [...cabecera, estado].join("\n"), { parseMode: "Markdown" });
 }

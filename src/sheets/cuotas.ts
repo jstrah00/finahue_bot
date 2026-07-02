@@ -5,10 +5,11 @@
  * quien, cuota_actual, total_cuotas, estado, fecha_alta.
  */
 
-import type { Cuota, Quien } from "../domain";
+import type { Cuota, Expense, Quien } from "../domain";
 import { SheetsClient } from "./client";
 import { buildHeaderMap, requireCol, cell, colToLetter, norm, SheetStructureError, type HeaderMap } from "./headers";
 import { CUOTAS_SHEET } from "./config-sheet";
+import { appendExpense } from "./detalle";
 import { parseArs } from "../format/money";
 
 export const CUOTAS_HEADERS = [
@@ -107,6 +108,33 @@ export async function appendCuota(client: SheetsClient, cuota: Omit<Cuota, "rowN
   for (const name of CUOTAS_HEADERS) row[colOf[name]!] = values[name];
 
   await client.appendValues(`${CUOTAS_SHEET}!A1`, [row]);
+  await ensureFechaAltaDateFormat(client, headers);
+}
+
+/**
+ * Aplica formato de fecha (yyyy-mm-dd) a toda la columna `fecha_alta` de la hoja
+ * Cuotas. Necesario porque escribimos con `USER_ENTERED`: Sheets guarda las
+ * fechas como número de serie y, sin formato de fecha, la celda muestra ese
+ * número crudo. Es idempotente y también corrige filas ya escritas.
+ */
+async function ensureFechaAltaDateFormat(client: SheetsClient, headers: HeaderMap): Promise<void> {
+  const iAlta = requireCol(headers, "fecha_alta", CUOTAS_SHEET);
+  const meta = (await client.getSheets()).find((s) => s.title === CUOTAS_SHEET);
+  if (!meta) return; // la hoja debería existir; si no, no hay nada que formatear
+  await client.batchUpdate([
+    {
+      repeatCell: {
+        range: {
+          sheetId: meta.sheetId,
+          startRowIndex: 1, // saltear el header
+          startColumnIndex: iAlta,
+          endColumnIndex: iAlta + 1,
+        },
+        cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "yyyy-mm-dd" } } },
+        fields: "userEnteredFormat.numberFormat",
+      },
+    },
+  ]);
 }
 
 /**
@@ -130,4 +158,54 @@ export async function advanceCuota(
     await client.updateValues(`${CUOTAS_SHEET}!${colEstado}${cuota.rowNumber}`, [["cerrada"]]);
   }
   return { nuevaActual, cerrada };
+}
+
+/** ¿La cuota está en un rango insertable (defensivo ante datos raros)? */
+export function insertable(c: Cuota): boolean {
+  return c.cuotaActual >= 1 && c.cuotaActual <= c.totalCuotas;
+}
+
+/** Construye el `Expense` de una cuota para el Detalle del mes. */
+export function cuotaToExpense(c: Omit<Cuota, "rowNumber">, fecha: string): Expense {
+  return {
+    monto: c.montoCuota,
+    detalle: c.descripcion,
+    categoria: c.categoria,
+    subcategoria: c.subcategoria,
+    medioPago: c.medioPago,
+    quien: c.quien,
+    fecha,
+    notas: "",
+    revisar: false,
+    esCuota: `cuota ${c.cuotaActual} de ${c.totalCuotas}`,
+  };
+}
+
+export interface InsertCuotasResult {
+  /** Cuotas insertadas en el Detalle este mes (con su cuota_actual previo al avance). */
+  inserted: Cuota[];
+  /** Cuotas que quedaron `cerrada` tras avanzar (última cuota). */
+  closed: Cuota[];
+}
+
+/**
+ * Inserta todas las cuotas `activa` insertables en el Detalle del mes: por cada
+ * una escribe el gasto (nota "cuota X de Y") y avanza su contador (cerrándola si
+ * supera el total). Asume que la hoja Detalle del mes ya existe.
+ */
+export async function insertActiveCuotasIntoMonth(
+  client: SheetsClient,
+  mes: string,
+  fecha: string,
+): Promise<InsertCuotasResult> {
+  const cuotas = (await readActiveCuotas(client)).filter(insertable);
+  const inserted: Cuota[] = [];
+  const closed: Cuota[] = [];
+  for (const c of cuotas) {
+    await appendExpense(client, mes, cuotaToExpense(c, fecha));
+    const { cerrada } = await advanceCuota(client, c);
+    inserted.push(c);
+    if (cerrada) closed.push(c);
+  }
+  return { inserted, closed };
 }

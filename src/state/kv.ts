@@ -4,13 +4,12 @@
  * Se usa para:
  *   - Gastos pendientes de confirmación (✅/❌).
  *   - Estado del formulario multi-paso de /cuota.
- *   - Cuotas pendientes de confirmación en /cargarcuotas.
  *
  * NO es una base de datos: es estado efímero de conversación. Toda la
  * persistencia real vive en el Sheet.
  */
 
-import type { Expense, Cuota, Quien } from "../domain";
+import type { Expense, Quien } from "../domain";
 
 /** TTL por defecto para estado de conversación (10 min). */
 const DEFAULT_TTL_SECONDS = 10 * 60;
@@ -19,14 +18,6 @@ const DEFAULT_TTL_SECONDS = 10 * 60;
 export interface PendingExpense {
   kind: "expense";
   expense: Expense;
-  chatId: number;
-}
-
-/** Cuotas pendientes de insertar (comando /cargarcuotas). */
-export interface PendingCuotas {
-  kind: "cuotas";
-  mes: string; // "YYYY-MM"
-  cuotas: Cuota[];
   chatId: number;
 }
 
@@ -54,9 +45,10 @@ export type CuotaStep =
   | "medioPago"
   | "quien"
   | "totalCuotas"
-  | "cuotaActual";
+  | "cuotaActual"
+  | "cuando";
 
-export type PendingState = PendingExpense | PendingCuotas;
+export type PendingState = PendingExpense;
 
 export class StateStore {
   constructor(private readonly kv: KVNamespace) {}
