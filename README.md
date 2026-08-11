@@ -6,6 +6,17 @@ Bot de Telegram para el tracking de finanzas de una pareja (Juli y Mili), con
 **Service Account** (JWT RS256 firmado con `SubtleCrypto`). Todo en free tier,
 sin infraestructura propia.
 
+## Guía de usuario
+
+[`docs/guia-usuario.html`](docs/guia-usuario.html) — guía completa para quien **usa** el bot
+(cargar gastos, cuotas, comandos, la planilla, qué hacer cuando algo falla). Es una página
+HTML autocontenida: se abre con doble clic, no tiene JS ni assets externos, y está escrita
+en genérico ("el bot de finanzas", sin nombre propio) para poder reutilizarla como base de
+una landing o entregársela a otra persona que instale su propia copia.
+
+Este README es la contracara técnica: setup, deploy y arquitectura. Las mejoras pendientes
+están en [`docs/backlog.md`](docs/backlog.md).
+
 ## Filosofía contable
 
 - **Categoría ≠ medio de pago.** La categoría responde _en qué_ gastás; el medio,

@@ -1,0 +1,1524 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Guia de usuario del bot de finanzas de Telegram: como cargar gastos, cuotas, consultas y como funciona la planilla.">
+<!--
+  Guia de usuario del bot de finanzas.
+  Pagina autocontenida: todo el CSS es inline, no hay JS ni assets externos,
+  las tipografias son del sistema. Se abre con doble clic y se puede
+  reutilizar tal cual en una landing (o copiar el <style> + el markup).
+  Tema claro/oscuro resuelto por tokens en :root (+ prefers-color-scheme
+  y data-theme="dark" / "light" en el elemento raiz).
+-->
+<title>Manual del Bot de Finanzas</title>
+<style>
+  /* ── Tokens: tema claro (base, sin stamp) ───────────────────────── */
+  :root {
+    --ground:      #FAFCF9;
+    --surface:     #F0F4EE;
+    --surface-2:   #E4EBE1;
+    --line:        #D3DCCF;
+    --line-soft:   #E6EDE3;
+    --ink:         #131D17;
+    --ink-2:       #3A4A40;
+    --muted:       #64756A;
+
+    --accent:      #0E5C3F;   /* verde tinta: lo que hace el bot */
+    --accent-soft: #DCEBE1;
+    --accent-ink:  #0B4630;
+    --accent-line: #A9CDB8;
+
+    --indigo:      #2F4B9B;   /* opcional / configurable */
+    --indigo-soft: #E2E8F7;
+    --indigo-ink:  #24397A;
+    --indigo-line: #B7C5E8;
+
+    --amber:       #8A5A05;   /* avisos y marcas */
+    --amber-soft:  #F7ECD5;
+    --amber-line:  #E3CFA4;
+
+    --danger:      #8E2E22;
+    --danger-soft: #F7E3DF;
+    --danger-line: #E8C2BA;
+
+    --bubble-me:   #D9EAD9;
+    --bubble-bot:  #FFFFFF;
+    --shadow:      0 1px 2px rgba(19,29,23,.05), 0 8px 24px -16px rgba(19,29,23,.2);
+    --shadow-lg:   0 2px 4px rgba(19,29,23,.05), 0 24px 48px -28px rgba(19,29,23,.3);
+    --glow:        radial-gradient(120% 100% at 12% 0%, rgba(14,92,63,.09), transparent 62%),
+                   radial-gradient(90% 90% at 92% 8%, rgba(47,75,155,.07), transparent 60%);
+
+    --display: "Superclarendon", "Rockwell", "Bookman Old Style", "Palatino Linotype", Georgia, serif;
+    --body: "Avenir Next", "Avenir", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Menlo", "Cascadia Mono", "Consolas", monospace;
+  }
+
+  /* dark por preferencia del sistema (gana salvo elección explícita de light) */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0C1310;
+      --surface:     #141D18;
+      --surface-2:   #1D2822;
+      --line:        #2B3A32;
+      --line-soft:   #1F2B25;
+      --ink:         #E7EEE8;
+      --ink-2:       #BCCBC1;
+      --muted:       #8B9C91;
+
+      --accent:      #57C494;
+      --accent-soft: #143023;
+      --accent-ink:  #8FDDB6;
+      --accent-line: #2C5A44;
+
+      --indigo:      #8FA9E8;
+      --indigo-soft: #171E33;
+      --indigo-ink:  #B3C4F1;
+      --indigo-line: #2E3C5F;
+
+      --amber:       #E2AE5C;
+      --amber-soft:  #2B2214;
+      --amber-line:  #4A3B1F;
+
+      --danger:      #EC8A7B;
+      --danger-soft: #321B17;
+      --danger-line: #5A3129;
+
+      --bubble-me:   #1B3229;
+      --bubble-bot:  #18211C;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.7);
+      --shadow-lg:   0 2px 6px rgba(0,0,0,.45), 0 28px 56px -30px rgba(0,0,0,.85);
+      --glow:        radial-gradient(120% 100% at 12% 0%, rgba(87,196,148,.10), transparent 62%),
+                     radial-gradient(90% 90% at 92% 8%, rgba(143,169,232,.08), transparent 60%);
+    }
+  }
+  /* dark por elección explícita */
+  :root[data-theme="dark"] {
+    --ground:      #0C1310;
+    --surface:     #141D18;
+    --surface-2:   #1D2822;
+    --line:        #2B3A32;
+    --line-soft:   #1F2B25;
+    --ink:         #E7EEE8;
+    --ink-2:       #BCCBC1;
+    --muted:       #8B9C91;
+
+    --accent:      #57C494;
+    --accent-soft: #143023;
+    --accent-ink:  #8FDDB6;
+    --accent-line: #2C5A44;
+
+    --indigo:      #8FA9E8;
+    --indigo-soft: #171E33;
+    --indigo-ink:  #B3C4F1;
+    --indigo-line: #2E3C5F;
+
+    --amber:       #E2AE5C;
+    --amber-soft:  #2B2214;
+    --amber-line:  #4A3B1F;
+
+    --danger:      #EC8A7B;
+    --danger-soft: #321B17;
+    --danger-line: #5A3129;
+
+    --bubble-me:   #1B3229;
+    --bubble-bot:  #18211C;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.7);
+    --shadow-lg:   0 2px 6px rgba(0,0,0,.45), 0 28px 56px -30px rgba(0,0,0,.85);
+    --glow:        radial-gradient(120% 100% at 12% 0%, rgba(87,196,148,.10), transparent 62%),
+                   radial-gradient(90% 90% at 92% 8%, rgba(143,169,232,.08), transparent 60%);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    background-image: var(--glow);
+    background-repeat: no-repeat;
+    background-size: 100% 900px;
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+
+  /* ── Layout ─────────────────────────────────────────────────────── */
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0 56px;
+  }
+  @media (min-width: 1020px) {
+    .shell { grid-template-columns: 224px minmax(0, 1fr); }
+    .toc { grid-column: 1; }
+    .doc { grid-column: 2; }
+  }
+
+  /* ── Índice ─────────────────────────────────────────────────────── */
+  .toc { display: none; }
+  @media (min-width: 1020px) {
+    .toc {
+      display: block;
+      position: sticky;
+      top: 0;
+      align-self: start;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding: 44px 0;
+      font-size: 13.5px;
+    }
+  }
+  .toc-title {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  .toc a {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px 6px 12px;
+    color: var(--ink-2);
+    text-decoration: none;
+    border-left: 2px solid var(--line-soft);
+    line-height: 1.35;
+    border-radius: 0 6px 6px 0;
+    transition: background .15s ease, color .15s ease;
+  }
+  .toc a:hover { color: var(--accent-ink); border-left-color: var(--accent); background: var(--accent-soft); }
+  .toc a .star { color: var(--muted); font-size: 11px; }
+
+  /* entradas clave del índice */
+  .toc li.key a {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    border-left: 3px solid var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    padding: 9px 12px;
+    border-radius: 8px;
+    margin: 4px 0;
+  }
+  .toc li.key a .star { color: var(--accent); }
+  .toc li.key a:hover { background: var(--accent-line); }
+
+  /* ── Cabecera ───────────────────────────────────────────────────── */
+  .doc { min-width: 0; }
+
+  .masthead { padding: 62px 0 38px; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    padding: 5px 12px;
+    border-radius: 100px;
+    margin: 0 0 22px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .masthead h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(2.5rem, 6.6vw, 4.1rem);
+    line-height: 1.02;
+    letter-spacing: -.015em;
+    margin: 0 0 22px;
+    text-wrap: balance;
+  }
+  .lead { font-size: 1.16rem; line-height: 1.6; color: var(--ink-2); max-width: 60ch; margin: 0 0 28px; }
+
+  /* atajos grandes, visibles en cualquier pantalla */
+  .jump { display: grid; gap: 12px; margin: 0 0 34px; max-width: 640px; }
+  @media (min-width: 620px) { .jump { grid-template-columns: 1fr 1fr; } }
+  .jump a {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 15px 18px;
+    border-radius: 12px;
+    text-decoration: none;
+    border: 1px solid var(--accent-line);
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    box-shadow: var(--shadow);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .jump a:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .jump a.alt { border-color: var(--indigo-line); background: var(--indigo-soft); color: var(--indigo-ink); }
+  .jump b { font-size: 1.02rem; font-weight: 600; }
+  .jump span { font-size: .86rem; opacity: .8; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); padding-top: 26px; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .04em;
+    padding: 5px 11px;
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    color: var(--ink-2);
+    background: var(--surface);
+  }
+
+  /* ── Secciones ──────────────────────────────────────────────────── */
+  section { padding: 52px 0 4px; scroll-margin-top: 20px; }
+  section + section { border-top: 1px solid var(--line-soft); }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.62rem, 3.4vw, 2.15rem);
+    line-height: 1.14;
+    letter-spacing: -.01em;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--body);
+    font-weight: 600;
+    font-size: 1.07rem;
+    letter-spacing: -.005em;
+    margin: 38px 0 10px;
+  }
+  h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 30px 0 10px;
+  }
+  .kicker {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .kicker::before { content: ""; width: 18px; height: 2px; background: var(--accent); border-radius: 2px; }
+  p { margin: 0 0 16px; max-width: 68ch; }
+  .sub { color: var(--muted); font-size: .95rem; }
+
+  ul, ol { max-width: 68ch; padding-left: 22px; margin: 0 0 16px; }
+  li { margin-bottom: 7px; }
+  li::marker { color: var(--accent); }
+
+  strong { font-weight: 600; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  code, kbd {
+    font-family: var(--mono);
+    font-size: .86em;
+    background: var(--surface-2);
+    border-radius: 4px;
+    padding: 1.5px 5px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  h2 code, h3 code { font-size: .8em; background: var(--accent-soft); color: var(--accent-ink); }
+
+  /* ── Secciones destacadas ───────────────────────────────────────── */
+  .feature {
+    border: 1px solid var(--accent-line);
+    border-radius: 18px;
+    background: linear-gradient(180deg, var(--accent-soft), transparent 320px), var(--ground);
+    padding: 34px clamp(20px, 3.4vw, 40px) 20px;
+    margin: 46px 0;
+    box-shadow: var(--shadow);
+  }
+  section.feature + section, section + section.feature { border-top: none; }
+  .feature > h2 { font-size: clamp(1.9rem, 4.2vw, 2.6rem); }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--ground);
+    border: 1px solid var(--accent-line);
+    padding: 5px 12px;
+    border-radius: 100px;
+    margin: 0 0 16px;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* ── Anatomía del mensaje ───────────────────────────────────────── */
+  .anatomy {
+    background: var(--ground);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 8px;
+    margin: 24px 0 14px;
+    box-shadow: var(--shadow);
+    max-width: 720px;
+  }
+  .arow {
+    display: grid;
+    grid-template-columns: minmax(120px, 210px) minmax(0, 1fr);
+    align-items: center;
+    gap: 6px 16px;
+    padding: 11px 12px;
+    border-radius: 10px;
+  }
+  .arow + .arow { border-top: 1px solid var(--line-soft); border-radius: 0; }
+  @media (max-width: 620px) {
+    .arow { grid-template-columns: 1fr; gap: 4px; }
+  }
+  .aline {
+    font-family: var(--mono);
+    font-size: .92rem;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--ink);
+    display: inline-block;
+    justify-self: start;
+    border-left: 3px solid var(--muted);
+  }
+  .arow.req .aline { border-left-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .arow.opt .aline { border-left-color: var(--indigo); background: var(--indigo-soft); color: var(--indigo-ink); }
+  .arow.mark .aline { border-left-color: var(--amber); background: var(--amber-soft); color: var(--amber); }
+  .adesc { font-size: .93rem; color: var(--ink-2); }
+  .adesc b { display: inline; font-weight: 600; color: var(--ink); }
+  .atag {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 100px;
+    margin-left: 8px;
+    white-space: nowrap;
+    vertical-align: 2px;
+  }
+  .arow.req .atag { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent-line); }
+  .arow.opt .atag { background: var(--indigo-soft); color: var(--indigo-ink); border: 1px solid var(--indigo-line); }
+  .arow.mark .atag { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber-line); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 0 24px; font-size: .86rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .legend .g { background: var(--accent); }
+  .legend .b { background: var(--indigo); }
+  .legend .y { background: var(--amber); }
+
+  /* ── Reglas ─────────────────────────────────────────────────────── */
+  .rules { display: grid; gap: 14px; margin: 24px 0 8px; }
+  @media (min-width: 700px) { .rules { grid-template-columns: 1fr 1fr; } }
+  .rule {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 19px 21px;
+  }
+  .rule h5 { margin: 0 0 6px; font-family: var(--body); font-size: .99rem; font-weight: 600; }
+  .rule p { margin: 0; font-size: .92rem; color: var(--ink-2); max-width: none; }
+
+  /* ── Flujo numerado ─────────────────────────────────────────────── */
+  .flow { list-style: none; padding: 0; margin: 26px 0 8px; max-width: none; display: grid; gap: 14px; counter-reset: f; }
+  @media (min-width: 760px) { .flow { grid-template-columns: repeat(3, 1fr); } }
+  .flow li {
+    counter-increment: f;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px 20px;
+    margin: 0;
+  }
+  .flow li::before {
+    content: counter(f);
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    font-family: var(--display);
+    font-size: 1.05rem;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    border: 1px solid var(--accent-line);
+    border-radius: 50%;
+    margin-bottom: 12px;
+  }
+  .flow b { display: block; font-size: .99rem; margin-bottom: 4px; }
+  .flow span { font-size: .9rem; color: var(--ink-2); }
+
+  /* ── Chat ───────────────────────────────────────────────────────── */
+  .chat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    margin: 22px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 640px;
+    box-shadow: var(--shadow);
+  }
+  .chat-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 4px 2px;
+  }
+  .bubble {
+    max-width: 90%;
+    padding: 11px 14px;
+    border-radius: 16px;
+    font-size: .93rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .bubble.me {
+    align-self: flex-end;
+    background: var(--bubble-me);
+    border: 1px solid var(--accent-line);
+    border-bottom-right-radius: 5px;
+    font-family: var(--mono);
+    font-size: .86rem;
+  }
+  .bubble.bot {
+    align-self: flex-start;
+    background: var(--bubble-bot);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 5px;
+  }
+  .bubble b { font-weight: 600; }
+  .bubble .m { font-family: var(--mono); font-size: .88em; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .btn {
+    font-size: .82rem;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-family: var(--mono);
+  }
+  .btn.ok { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-line); }
+
+  /* ── Tablas ─────────────────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; margin: 22px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--ground); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .92rem; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: var(--line-soft); }
+  td.num { font-variant-numeric: tabular-nums; }
+  td .req-tag, td .opt-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 1px 7px;
+    border-radius: 100px;
+    margin-top: 4px;
+  }
+  td .req-tag { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent-line); }
+  td .opt-tag { background: var(--indigo-soft); color: var(--indigo-ink); border: 1px solid var(--indigo-line); }
+
+  /* ── Callouts ───────────────────────────────────────────────────── */
+  .note {
+    border: 1px solid var(--accent-line);
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 14px 18px;
+    border-radius: 4px 10px 10px 4px;
+    margin: 22px 0;
+    max-width: 68ch;
+  }
+  .note.warn { border-color: var(--amber-line); border-left-color: var(--amber); background: var(--amber-soft); }
+  .note.stop { border-color: var(--danger-line); border-left-color: var(--danger); background: var(--danger-soft); }
+  .note.info { border-color: var(--indigo-line); border-left-color: var(--indigo); background: var(--indigo-soft); }
+  .note p { margin: 0; font-size: .93rem; max-width: none; }
+  .note p + p { margin-top: 8px; }
+  .note .tag {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    color: var(--accent-ink);
+  }
+  .note.warn .tag { color: var(--amber); }
+  .note.stop .tag { color: var(--danger); }
+  .note.info .tag { color: var(--indigo-ink); }
+
+  /* ── Código ─────────────────────────────────────────────────────── */
+  pre {
+    font-family: var(--mono);
+    font-size: .85rem;
+    line-height: 1.65;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 15px 17px;
+    overflow-x: auto;
+    margin: 18px 0;
+    max-width: 640px;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; white-space: pre; }
+
+  .sheet-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 24px 0 0; }
+  .sheet-tab {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .sheet-tab.on { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-line); }
+
+  /* ── Referencia rápida ──────────────────────────────────────────── */
+  .cmds { display: grid; gap: 10px; margin: 22px 0; }
+  @media (min-width: 640px) { .cmds { grid-template-columns: 1fr 1fr; } }
+  .cmd {
+    background: var(--ground);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 13px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .cmd code { background: none; padding: 0; color: var(--accent-ink); font-size: .9rem; font-weight: 600; }
+  .cmd span { font-size: .88rem; color: var(--ink-2); }
+  .cmd.write { border-color: var(--accent-line); background: var(--accent-soft); }
+  .cmd.write code { color: var(--accent-ink); }
+  .cmd.read code { color: var(--indigo-ink); }
+
+  .numbers { display: grid; gap: 10px; margin: 20px 0; max-width: none; padding: 0; list-style: none; }
+  @media (min-width: 640px) { .numbers { grid-template-columns: repeat(4, 1fr); } }
+  .numbers li {
+    margin: 0;
+    background: var(--ground);
+    border: 1px solid var(--indigo-line);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .numbers b {
+    display: block;
+    font-family: var(--display);
+    font-size: 1.5rem;
+    line-height: 1.1;
+    color: var(--indigo-ink);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 3px;
+  }
+  .numbers span { font-size: .86rem; color: var(--ink-2); }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: .88rem;
+    color: var(--muted);
+  }
+  footer p { max-width: 68ch; }
+</style>
+<style>
+  /* reset minimo (la version publicada lo recibe del runtime) */
+  html { -webkit-text-size-adjust: 100%; }
+  img, svg { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <p class="toc-title">Contenido</p>
+    <ol>
+      <li><a href="#que-es">Qué es y dónde se usa</a></li>
+      <li><a href="#configurable">Lo que cambia en cada bot</a></li>
+      <li><a href="#filosofia">Cómo piensa</a></li>
+      <li><a href="#ciclo">El ciclo del mes</a></li>
+      <li class="key"><a href="#cargar"><span class="star">★</span>Cargar un gasto</a></li>
+      <li><a href="#campos">Los campos, uno por uno</a></li>
+      <li><a href="#ejemplos">Ejemplos reales</a></li>
+      <li><a href="#cuotas">Cuotas</a></li>
+      <li><a href="#consultas">Consultar</a></li>
+      <li><a href="#planilla">La planilla</a></li>
+      <li><a href="#problemas">Cuando algo sale mal</a></li>
+      <li class="key"><a href="#referencia"><span class="star">★</span>Referencia rápida</a></li>
+    </ol>
+  </aside>
+
+  <main class="doc">
+    <header class="masthead">
+      <p class="eyebrow"><span class="dot"></span>Guía de uso · Telegram + Google Sheets</p>
+      <h1>El bot de finanzas</h1>
+      <p class="lead">
+        Le mandás un mensaje con lo que gastaste. Lo entiende, te lo muestra para confirmar y
+        lo escribe en tu planilla. Todo lo demás — presupuestos, cuotas, resúmenes — sale de ahí.
+      </p>
+
+      <nav class="jump">
+        <a href="#cargar">
+          <b>★ Cargar un gasto</b>
+          <span>La estructura del mensaje, campo por campo</span>
+        </a>
+        <a class="alt" href="#referencia">
+          <b>★ Referencia rápida</b>
+          <span>Todos los comandos y la plantilla</span>
+        </a>
+      </nav>
+
+      <div class="chips">
+        <span class="chip">Grupo, canal o mensaje directo</span>
+        <span class="chip">Guarda todo en Google Sheets</span>
+        <span class="chip">Montos en pesos</span>
+      </div>
+    </header>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="que-es">
+      <p class="kicker">En treinta segundos</p>
+      <h2>Qué es y dónde se usa</h2>
+      <p>
+        Es un bot de Telegram que registra gastos. No tiene app, ni pantalla, ni base de datos
+        propia: <strong>la única fuente de verdad es una planilla de Google Sheets</strong>. El bot
+        escribe ahí y lee de ahí.
+      </p>
+      <p>Podés hablarle de dos formas, y las dos funcionan igual:</p>
+      <ul>
+        <li><strong>En un grupo o canal</strong>, cuando lo comparten varias personas. El bot lee los
+        mensajes del chat y anota quién cargó cada gasto. Es el modo pensado para una casa o una
+        pareja.</li>
+        <li><strong>Por mensaje directo</strong>, si lo usás solo. No hace falta ningún grupo: le
+        escribís al bot y listo.</li>
+      </ul>
+      <p>
+        Y se usa de dos maneras. Para <strong>cargar</strong> un gasto, mandás un mensaje normal que
+        arranca con el monto. Para <strong>preguntar</strong> algo, usás un comando que empieza con
+        <code>/</code>.
+      </p>
+
+      <div class="chat">
+        <p class="chat-label">Así se ve cargar un gasto</p>
+        <div class="bubble me">5.000
+café con medialunas
+salidas restaurantes
+mp</div>
+        <div class="bubble bot">🧾 <b>Confirmá el gasto:</b>
+
+💰 Monto: <b>$5.000</b>
+📝 Detalle: café con medialunas
+📂 Categoría: salidas › restaurantes
+💳 Medio: mp
+👤 Quién: Juli
+📅 Fecha: 2026-08-11
+          <div class="btns"><span class="btn ok">✅ Confirmar</span><span class="btn">❌ Cancelar</span></div>
+        </div>
+      </div>
+
+      <p>
+        Tocás <b>✅</b> y la fila queda escrita en la planilla del mes. Eso es el 90 % del uso
+        diario. El resto de esta guía explica el otro 10 %.
+      </p>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="configurable">
+      <p class="kicker">Antes de empezar</p>
+      <h2>Lo que cambia en cada bot</h2>
+      <p>
+        No hay dos instalaciones iguales. Los ejemplos de esta guía usan una configuración de
+        muestra; en tu bot, estas cosas son las tuyas:
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Esto</th><th>En los ejemplos de la guía</th><th>Dónde se cambia</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Los nombres de las personas</strong></td>
+              <td><code>Juli</code> y <code>Mili</code></td>
+              <td>Se definen al instalar el bot.</td>
+            </tr>
+            <tr>
+              <td><strong>Las categorías y subcategorías</strong></td>
+              <td><code>casa</code>, <code>transporte</code>, <code>salidas</code>, <code>salud</code>,
+              <code>ahorros</code>…</td>
+              <td>En la hoja <code>Config</code> de la planilla, cuando quieras.</td>
+            </tr>
+            <tr>
+              <td><strong>Los medios de pago</strong></td>
+              <td><code>mp</code>, <code>efectivo</code>, <code>debito</code></td>
+              <td>También en la hoja <code>Config</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Dónde y a qué hora avisa</strong></td>
+              <td>Recordatorio a las 21:30 en el grupo</td>
+              <td>Se define al instalar el bot.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note info">
+        <span class="tag">La regla práctica</span>
+        <p>Cuando dudes de un nombre, preguntale al bot: <code>/categorias</code> y
+        <code>/mediosdepago</code> te devuelven <em>exactamente</em> la lista que él reconoce. No hay
+        que adivinar nunca.</p>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="filosofia">
+      <p class="kicker">Las reglas del sistema</p>
+      <h2>Cómo piensa el bot</h2>
+      <p>
+        No son detalles técnicos: son decisiones contables que explican por qué el bot pide lo que
+        pide. Si las entendés, nunca más dudás dónde va un gasto.
+      </p>
+
+      <div class="rules">
+        <div class="rule">
+          <h5>Base caja: manda cuándo sale la plata</h5>
+          <p>Un gasto entra en el mes en que <strong>se paga</strong>, no en el mes en que compraste
+          ni en el que consumiste. Una compra en 12 cuotas son 12 gastos, uno por mes.</p>
+        </div>
+        <div class="rule">
+          <h5>Los ahorros acumulan, no se presupuestan</h5>
+          <p>La categoría <code>ahorros</code> no tiene presupuesto: sus subcategorías solo suman
+          los aportes. Y cuando <em>gastás</em> plata de los ahorros, el gasto va a la categoría
+          real de la compra (por ejemplo <code>casa mantenimiento</code>), nunca a
+          <code>ahorros</code>.</p>
+        </div>
+        <div class="rule">
+          <h5>Todo en pesos</h5>
+          <p>El bot no maneja dólares ni tipo de cambio. Si pagaste en otra moneda, cargá el
+          equivalente en pesos que efectivamente salió de la cuenta.</p>
+        </div>
+        <div class="rule">
+          <h5>El bot no calcula nada</h5>
+          <p>Los totales, desvíos y porcentajes los calculan fórmulas de la planilla. El bot solo
+          escribe filas y lee celdas ya calculadas. Si un número te parece raro, la respuesta está
+          en la planilla, no en el bot.</p>
+        </div>
+        <div class="rule">
+          <h5>Cada mes vive en su propia hoja</h5>
+          <p>Un mes son dos hojas nuevas: el detalle de gastos y el resumen contra presupuesto.
+          Cerrar un mes es simplemente dejar de escribir en él.</p>
+        </div>
+        <div class="rule">
+          <h5>Solo contesta a los suyos</h5>
+          <p>Responde únicamente a las personas autorizadas al instalarlo. Cualquier otro mensaje
+          se ignora sin contestar.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="ciclo">
+      <p class="kicker">Rutina mensual</p>
+      <h2>El ciclo del mes</h2>
+      <p>
+        Cada mes empieza igual. Son tres pasos, en este orden, y el primero es obligatorio: sin la
+        hoja del mes creada, el bot no puede guardar ningún gasto.
+      </p>
+
+      <ol class="flow">
+        <li>
+          <b>Corré <code>/nuevomes</code></b>
+          <span>Una sola vez, cuando arranca el mes. Crea las dos hojas y mete automáticamente las
+          cuotas activas.</span>
+        </li>
+        <li>
+          <b>Cargá los presupuestos</b>
+          <span>A mano, en la planilla, en la hoja <code>Resumen</code> del mes. Es lo único que el
+          bot no hace por vos.</span>
+        </li>
+        <li>
+          <b>Cargá gastos todos los días</b>
+          <span>Mensaje, confirmar, listo. A la noche el bot te lo recuerda.</span>
+        </li>
+      </ol>
+
+      <h3>Qué hace exactamente <code>/nuevomes</code></h3>
+      <p>
+        Crea dos hojas nuevas en la planilla, <code>2026-08 Detalle</code> y
+        <code>2026-08 Resumen</code>, con los encabezados, todas las subcategorías precargadas y
+        las fórmulas de cálculo listas. Después recorre las cuotas activas, escribe la cuota del
+        mes de cada una en el Detalle y avanza su contador.
+      </p>
+
+      <div class="chat">
+        <p class="chat-label">Arranque de mes</p>
+        <div class="bubble me">/nuevomes</div>
+        <div class="bubble bot">✅ Creé las hojas del mes <b>2026-08</b>:
+• <span class="m">2026-08 Detalle</span>
+• <span class="m">2026-08 Resumen</span> (con fórmulas listas)
+
+🧾 <b>Cuotas insertadas</b> (2):
+• Heladera — <b>$85.000</b> · cuota 4/12
+• Zapatillas — <b>$28.500</b> · cuota 6/6
+
+🏁 <b>Cerradas</b> (última cuota):
+• Zapatillas
+
+Ahora cargá los <b>presupuestos</b> en el Resumen.</div>
+      </div>
+
+      <div class="note">
+        <span class="tag">Se puede repetir sin miedo</span>
+        <p>Si corrés <code>/nuevomes</code> dos veces, la segunda no hace nada: el bot ve que el mes
+        ya existe y te avisa. Por eso las cuotas nunca se duplican, y por eso tampoco te pisa los
+        presupuestos que cargaste a mano.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════ SECCIÓN DESTACADA ═══════════════ -->
+    <section id="cargar" class="feature">
+      <p class="badge"><span class="dot"></span>★ Lo que vas a hacer todos los días</p>
+      <h2>Cargar un gasto</h2>
+      <p>
+        Un gasto es un mensaje <strong>sin barra</strong>, con <strong>una línea por dato</strong>.
+        Hay una sola regla de posición: <strong>la primera línea es siempre el monto</strong>. Todo
+        el resto lo reconoce el bot solo, en cualquier orden.
+      </p>
+
+      <h3>La estructura del mensaje</h3>
+      <p class="sub">Este es el mensaje completo, línea por línea, con lo que significa cada una.</p>
+
+      <div class="anatomy">
+        <div class="arow req">
+          <span class="aline">5.000</span>
+          <span class="adesc"><b>Monto</b><span class="atag">1ª línea · obligatorio</span><br>
+          Cuánto pagaste, en pesos. El punto separa miles y la coma, decimales.</span>
+        </div>
+        <div class="arow req">
+          <span class="aline">café con medialunas</span>
+          <span class="adesc"><b>Detalle</b><span class="atag">obligatorio</span><br>
+          Qué fue. Texto libre, lo que a vos te sirva para reconocerlo dentro de seis meses.</span>
+        </div>
+        <div class="arow req">
+          <span class="aline">salidas restaurantes</span>
+          <span class="adesc"><b>Categoría + subcategoría</b><span class="atag">obligatorio</span><br>
+          Dos palabras, en ese orden. Es lo que decide en qué presupuesto entra el gasto.</span>
+        </div>
+        <div class="arow opt">
+          <span class="aline">mp</span>
+          <span class="adesc"><b>Medio de pago</b><span class="atag">opcional</span><br>
+          Con qué pagaste. Una sola palabra, de las que están en la planilla.</span>
+        </div>
+        <div class="arow opt">
+          <span class="aline">Mili</span>
+          <span class="adesc"><b>Quién</b><span class="atag">opcional</span><br>
+          De quién fue el gasto. Si no lo pones, es de quien manda el mensaje.</span>
+        </div>
+        <div class="arow opt">
+          <span class="aline">09/08</span>
+          <span class="adesc"><b>Fecha</b><span class="atag">opcional</span><br>
+          Día y mes. Si no la pones, es hoy.</span>
+        </div>
+        <div class="arow mark">
+          <span class="aline">revisar</span>
+          <span class="adesc"><b>Marca para revisar</b><span class="atag">opcional</span><br>
+          Pinta la fila de amarillo en la planilla, para volver a mirarla con calma.</span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i class="g"></i>Obligatorio</span>
+        <span><i class="b"></i>Opcional</span>
+        <span><i class="y"></i>Marca especial</span>
+      </div>
+
+      <p>
+        Las tres primeras líneas son el mínimo indispensable. Las otras cuatro las pones cuando
+        hacen falta, en cualquier orden, y podés saltear las que no uses.
+      </p>
+
+      <pre><code>Mínimo             Completo
+─────────────      ─────────────
+3.200              48.000
+café con leche     dentista
+salidas restaurantes  salud imprevistos
+                   mp
+                   Mili
+                   07/08
+                   revisar</code></pre>
+
+      <h3>Cómo decide qué es cada línea</h3>
+      <p>
+        Toma cada línea <strong>completa</strong> y pregunta: ¿es una fecha? ¿es una palabra que está
+        en la lista de medios de pago? ¿es un nombre? ¿son dos palabras que forman una categoría
+        válida? Lo que no reconoce, es texto libre: la primera línea libre es el
+        <strong>detalle</strong> y las siguientes van a <strong>notas</strong>.
+      </p>
+      <p>
+        La comparación es por <strong>línea entera</strong>, no "que contenga". Por eso
+        <code>salidas del finde</code> se guarda tranquilo como detalle sin confundirse con la
+        categoría <code>salidas</code>. Mayúsculas y minúsculas no importan en ningún campo.
+      </p>
+
+      <div class="note warn">
+        <span class="tag">La trampa más común</span>
+        <p>Si escribís una categoría con una subcategoría que no existe — por ejemplo
+        <code>salidas cafetería</code> — el bot <strong>no</strong> lo toma como categoría: esa línea
+        cae como texto libre y termina en el detalle. Vas a ver el resumen sin categoría y con un
+        detalle raro. Mirá <code>/categorias</code> si dudás de un nombre.</p>
+      </div>
+
+      <h3>Si el mensaje no arranca con un número, el bot ni se entera</h3>
+      <p>
+        En un grupo el bot lee todos los mensajes, así que necesita distinguir un gasto de una
+        charla. El criterio es simple: si la primera línea no empieza con un número (o con
+        <code>$</code>), lo ignora en silencio. Podés hablar normal en el chat sin que salte a
+        corregirte.
+      </p>
+
+      <h3>Confirmar, cancelar y el reloj</h3>
+      <p>
+        Antes de escribir nada, el bot te muestra cómo interpretó el mensaje. Revisás y tocás
+        <b>✅ Confirmar</b> o <b>❌ Cancelar</b>. Nada se guarda hasta que confirmás.
+      </p>
+      <ul>
+        <li>La confirmación <strong>vence a los 10 minutos</strong>. Si pasó más tiempo, el bot te
+        dice que expiró y cargás el gasto de nuevo.</li>
+        <li>Tocar ✅ dos veces no duplica el gasto: el pedido se consume en el primer toque.</li>
+        <li>Si todavía no corriste <code>/nuevomes</code>, el bot no te ofrece confirmar — te avisa
+        que falta la hoja del mes.</li>
+      </ul>
+
+      <h3>Cuando falta la subcategoría</h3>
+      <p>
+        Si pusiste solo el nombre de la categoría, el bot no adivina: te muestra las subcategorías
+        en botones y sigue desde ahí.
+      </p>
+
+      <div class="chat">
+        <p class="chat-label">Categoría incompleta</p>
+        <div class="bubble me">12.400
+verdulería del barrio
+casa</div>
+        <div class="bubble bot">📂 ¿Qué subcategoría de <b>casa</b>? Elegí una:
+          <div class="btns">
+            <span class="btn">hogar</span><span class="btn">mantenimiento</span>
+            <span class="btn">servicios</span><span class="btn">super</span>
+          </div>
+        </div>
+        <div class="bubble bot">🧾 <b>Confirmá el gasto:</b>
+
+💰 Monto: <b>$12.400</b>
+📝 Detalle: verdulería del barrio
+📂 Categoría: casa › super
+👤 Quién: Mili
+📅 Fecha: 2026-08-11
+          <div class="btns"><span class="btn ok">✅ Confirmar</span><span class="btn">❌ Cancelar</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="campos">
+      <p class="kicker">Referencia de campos</p>
+      <h2>Los campos, uno por uno</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Campo</th><th>Cómo lo reconoce</th><th>Ejemplos</th><th>Si no lo pones</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Monto</strong><br><span class="req-tag">obligatorio</span></td>
+              <td>Primera línea, empieza con número. El punto es separador de miles y la coma, de
+              decimales.</td>
+              <td class="num"><code>5000</code> <code>5.000</code> <code>5000,50</code>
+              <code>$5.000</code></td>
+              <td>No hay gasto: el bot te pide el monto.</td>
+            </tr>
+            <tr>
+              <td><strong>Detalle</strong><br><span class="req-tag">obligatorio</span></td>
+              <td>La primera línea de texto que no reconoce como otra cosa.</td>
+              <td><code>café con medialunas</code></td>
+              <td>El bot te lo reclama y no guarda.</td>
+            </tr>
+            <tr>
+              <td><strong>Categoría + subcategoría</strong><br><span class="req-tag">obligatorio</span></td>
+              <td>Una línea de <strong>exactamente dos palabras</strong>: categoría válida +
+              subcategoría válida de esa categoría.</td>
+              <td><code>salidas restaurantes</code><br><code>casa super</code></td>
+              <td>Si pusiste solo la categoría, te muestra botones. Si no pusiste nada, te lo pide.</td>
+            </tr>
+            <tr>
+              <td><strong>Medio de pago</strong><br><span class="opt-tag">opcional</span></td>
+              <td>Una sola palabra que esté en la lista de la planilla.</td>
+              <td><code>mp</code> <code>efectivo</code> <code>debito</code></td>
+              <td>Queda vacío. El gasto se guarda igual.</td>
+            </tr>
+            <tr>
+              <td><strong>Quién</strong><br><span class="opt-tag">opcional</span></td>
+              <td>Una sola palabra con el nombre de una de las personas configuradas. Da igual
+              cómo lo escribas.</td>
+              <td><code>Mili</code> <code>juli</code></td>
+              <td>Quien mandó el mensaje.</td>
+            </tr>
+            <tr>
+              <td><strong>Fecha</strong><br><span class="opt-tag">opcional</span></td>
+              <td>Día y mes, con barras o guiones. El año es opcional.</td>
+              <td class="num"><code>09/08</code> <code>9-8</code> <code>09/08/2026</code></td>
+              <td>Hoy, en hora de Argentina.</td>
+            </tr>
+            <tr>
+              <td><strong>Notas</strong><br><span class="opt-tag">opcional</span></td>
+              <td>La segunda línea de texto libre en adelante.</td>
+              <td><code>lo pagó ella, se lo devuelvo</code></td>
+              <td>Queda vacío.</td>
+            </tr>
+            <tr>
+              <td><code>revisar</code><br><span class="opt-tag">opcional</span></td>
+              <td>La palabra exacta, sola en su línea.</td>
+              <td><code>revisar</code></td>
+              <td>La fila queda con el fondo normal.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note warn">
+        <span class="tag">Ojo con la fecha</span>
+        <p>La fecha va en la columna <code>fecha</code> de la fila, pero el gasto <strong>siempre se
+        escribe en la hoja del mes actual</strong>. Poner <code>28/07</code> en agosto no lo manda al
+        resumen de julio: queda contado en agosto con fecha de julio. Si de verdad necesitás cargar
+        un gasto en un mes cerrado, agregá la fila a mano en la hoja de ese mes.</p>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="ejemplos">
+      <p class="kicker">Casos de todos los días</p>
+      <h2>Ejemplos reales</h2>
+
+      <h4>Lo mínimo posible</h4>
+      <pre><code>3.200
+café con leche
+salidas restaurantes</code></pre>
+      <p class="sub">Sin medio de pago, sin fecha, sin nombre: usa hoy y a quien escribió.</p>
+
+      <h4>Un gasto de otra persona, de otro día, con nota</h4>
+      <pre><code>48.000
+dentista
+salud imprevistos
+mp
+Mili
+07/08
+lo pagó ella, va a la cuenta común</code></pre>
+      <p class="sub">La última línea es la segunda de texto libre, así que va a <code>notas</code>.</p>
+
+      <h4>Un monto que todavía no está cerrado</h4>
+      <pre><code>90.000
+service del auto, falta la factura
+transporte auto
+revisar</code></pre>
+      <p class="sub">Queda amarilla en la planilla hasta que la mires de nuevo.</p>
+
+      <h4>Un aporte al ahorro</h4>
+      <pre><code>150.000
+aporte de agosto
+ahorros imprevistos</code></pre>
+      <p class="sub">Se acumula. No tiene presupuesto ni desvío.</p>
+
+      <div class="note">
+        <span class="tag">Y cuando gastás esos ahorros</span>
+        <p>Va a la categoría real de la compra. Si sacaste del fondo de imprevistos para arreglar
+        el termotanque, es <code>casa mantenimiento</code> — no <code>ahorros</code>. Así el desvío
+        aparece donde de verdad pasó el gasto.</p>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="cuotas">
+      <p class="kicker">Gastos que se repiten solos</p>
+      <h2>Cuotas</h2>
+      <p>
+        Una cuota es un gasto que entra todos los meses, un número fijo de veces: un
+        electrodoméstico en 12 pagos, un curso en 6, unas zapatillas en 3. La cargás
+        <strong>una sola vez</strong> y después cada <code>/nuevomes</code> la mete en el mes nuevo y
+        avanza el contador, hasta que se termina y se cierra sola.
+      </p>
+
+      <h3>El alta: <code>/cuota</code></h3>
+      <p>
+        Es un formulario guiado de nueve pasos. Los que tienen opciones se contestan con botones;
+        los demás, escribiendo.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Paso</th><th>Qué te pregunta</th><th>Cómo contestás</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>Descripción</td><td>Escribís (ej. <code>Heladera</code>)</td></tr>
+            <tr><td class="num">2</td><td>Monto de <em>cada</em> cuota</td><td>Escribís (ej. <code>85.000</code>)</td></tr>
+            <tr><td class="num">3</td><td>Categoría</td><td>Botones</td></tr>
+            <tr><td class="num">4</td><td>Subcategoría</td><td>Botones</td></tr>
+            <tr><td class="num">5</td><td>Medio de pago</td><td>Botones</td></tr>
+            <tr><td class="num">6</td><td>De quién es</td><td>Botones</td></tr>
+            <tr><td class="num">7</td><td>Total de cuotas</td><td>Escribís un entero (ej. <code>12</code>)</td></tr>
+            <tr><td class="num">8</td><td>En qué cuota vas</td><td>Escribís un número de 1 al total</td></tr>
+            <tr><td class="num">9</td><td>Cuándo entra esa cuota</td><td>Botones: <b>este mes</b> o <b>el mes que viene</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        El paso 8 existe porque muchas veces cargás una compra que ya empezó. Si vas por la cuota 4
+        de 12, poné <code>4</code> y el bot sigue desde ahí — no vas a arrastrar las tres anteriores.
+      </p>
+
+      <h3>El paso 9, que es el que confunde</h3>
+      <ul>
+        <li><b>Este mes</b> — si la hoja del mes ya existe, el bot escribe la cuota ahora mismo en
+        el Detalle y deja preparada la siguiente para el mes que viene.</li>
+        <li><b>Este mes</b>, pero el mes todavía no fue creado — no escribe nada y te lo dice: esa
+        cuota va a entrar cuando corras <code>/nuevomes</code>.</li>
+        <li><b>El mes que viene</b> — no escribe nada ahora; la cuota entra con el próximo
+        <code>/nuevomes</code>.</li>
+      </ul>
+
+      <div class="chat">
+        <p class="chat-label">Cierre del formulario</p>
+        <div class="bubble bot">✅ <b>Cuota dada de alta</b>
+
+🧾 Heladera
+💰 $85.000 × cuota
+📂 casa › hogar
+💳 mp · 👤 Juli
+
+🔢 Inserté la cuota 4/12 en <b>2026-08</b>. La próxima entra con el /nuevomes que viene.</div>
+      </div>
+
+      <h3>Cómo se ven las cuotas en la planilla</h3>
+      <p>
+        Cada cuota insertada es una fila normal del Detalle, con una marca en la columna
+        <code>es_cuota</code> que dice <code>cuota 4 de 12</code>. Cuenta en el presupuesto de su
+        categoría como cualquier otro gasto, y aparece en <code>/gastos</code> con esa aclaración al
+        lado.
+      </p>
+
+      <div class="note warn">
+        <span class="tag">Mientras el formulario está abierto</span>
+        <p>Todo lo que escribas se toma como respuesta al paso actual, así que no podés cargar un
+        gasto en el medio. El formulario se cierra al terminarlo, o solo <strong>a los 30
+        minutos</strong> si lo dejás por la mitad.</p>
+      </div>
+
+      <h3>Cancelar o cambiar una cuota</h3>
+      <p>
+        No hay comando para eso: se edita a mano en la hoja <code>Cuotas</code> de la planilla. Para
+        dar de baja una, cambiá su <code>estado</code> de <code>activa</code> a <code>cerrada</code>
+        y deja de entrar. También podés corregir ahí el monto, la categoría o en qué cuota va.
+      </p>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="consultas">
+      <p class="kicker">Preguntarle cosas</p>
+      <h2>Consultar sin abrir la planilla</h2>
+
+      <h3><code>/resumen</code> — cómo venís este mes</h3>
+      <p>
+        Presupuesto contra gastado, subcategoría por subcategoría, con barra de progreso y cuánto
+        queda. Las de <code>ahorros</code> muestran el acumulado; las que no tienen presupuesto
+        cargado dicen solo cuánto se gastó.
+      </p>
+
+      <div class="chat">
+        <p class="chat-label">Resumen del mes</p>
+        <div class="bubble bot">📊 <b>Resumen 2026-08</b>
+
+<b>casa</b>
+  • <span class="m">super</span>
+     █████░░░ 68%
+     $204.000 / $300.000 · resta <b>$96.000</b>
+  • <span class="m">servicios</span>
+     ███████░ 92%
+     $110.400 / $120.000 · resta <b>$9.600</b>
+
+<b>salidas</b>
+  • <span class="m">restaurantes</span>
+     ████████ 118%
+     $70.800 / $60.000 · resta <b>-$10.800</b>
+
+<b>ahorros</b>
+  • <span class="m">imprevistos</span> — acumulado: <b>$150.000</b></div>
+      </div>
+
+      <p class="sub">
+        Cuando te pasaste, la barra se queda llena y el porcentaje sigue subiendo: el número que
+        importa es el resto en negativo.
+      </p>
+
+      <h3><code>/categoria &lt;nombre&gt; [YYYY-MM]</code> — zoom en una categoría</h3>
+      <p>
+        Muestra las subcategorías de esa categoría y abajo la lista de gastos que la componen. Sin
+        fecha usa el mes actual; con <code>2026-07</code> al final, mira un mes pasado. Es la forma
+        rápida de responder «¿en qué se nos fue el súper?».
+      </p>
+      <pre><code>/categoria casa
+/categoria salidas 2026-07</code></pre>
+
+      <h3><code>/gastos</code> — todo el mes, fila por fila</h3>
+      <p>
+        Cada gasto del mes con fecha, monto, categoría, detalle y quién lo cargó. Si son muchos, el
+        bot manda varios mensajes seguidos.
+      </p>
+
+      <h3>Las listas de referencia</h3>
+      <ul>
+        <li><code>/categorias</code> — todas las categorías con sus subcategorías y qué va en cada
+        una. Es la misma lista que el bot usa para reconocer.</li>
+        <li><code>/mediosdepago</code> — los medios de pago válidos, tal como están escritos en la
+        planilla.</li>
+        <li><code>/formato</code> — el recordatorio corto de cómo se escribe un gasto.</li>
+        <li><code>/sheet</code> — el link directo a la planilla.</li>
+        <li><code>/help</code> — resumen de todo, dentro de Telegram.</li>
+      </ul>
+
+      <h3>El recordatorio de la noche</h3>
+      <p>
+        Todos los días a las <strong>21:30</strong> el bot escribe en el chat configurado para que
+        carguen los gastos del día. No hay que contestarle nada: es un empujón, no una pregunta.
+      </p>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="planilla">
+      <p class="kicker">Dónde vive todo</p>
+      <h2>La planilla</h2>
+      <p>
+        Cuatro tipos de hoja. Dos las maneja el bot, dos las tocás vos. El bot busca las columnas
+        <strong>por su encabezado</strong>, así que podés reordenar columnas o agregar filas sin
+        romper nada — lo único que no hay que hacer es <strong>renombrar los encabezados</strong>.
+      </p>
+
+      <div class="sheet-tabs">
+        <span class="sheet-tab on">Config</span>
+        <span class="sheet-tab">Cuotas</span>
+        <span class="sheet-tab">2026-08 Detalle</span>
+        <span class="sheet-tab">2026-08 Resumen</span>
+      </div>
+
+      <div class="table-wrap" style="border-top-left-radius:0">
+        <table>
+          <thead><tr><th>Hoja</th><th>Qué guarda</th><th>Quién la edita</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>Config</code></td>
+              <td>Las categorías, subcategorías con su descripción, y los medios de pago. Es el
+              diccionario que el bot usa para entender tus mensajes.</td>
+              <td><strong>Vos.</strong> Agregá un medio de pago o una subcategoría y el bot la
+              reconoce al instante, sin tocar código.</td>
+            </tr>
+            <tr>
+              <td><code>Cuotas</code></td>
+              <td>Una fila por cuota: descripción, monto, categoría, en qué cuota va, total y si
+              está <code>activa</code> o <code>cerrada</code>.</td>
+              <td>El bot. Vos entrás solo para dar de baja o corregir una.</td>
+            </tr>
+            <tr>
+              <td><code>2026-08 Detalle</code></td>
+              <td>Un gasto por fila. Es el libro del mes.</td>
+              <td>El bot. Vos corregís o borrás filas cuando algo salió mal.</td>
+            </tr>
+            <tr>
+              <td><code>2026-08 Resumen</code></td>
+              <td>Una fila por subcategoría: presupuesto, gastado, desvío y porcentaje.</td>
+              <td><strong>Vos cargás la columna <code>presupuesto</code></strong>. El resto son
+              fórmulas: no las toques.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Los presupuestos, cada mes</h3>
+      <p>
+        Cuando <code>/nuevomes</code> crea el Resumen, la columna <code>presupuesto</code> queda
+        vacía. Ese es tu momento de decidir el mes. Una subcategoría sin presupuesto no se rompe:
+        aparece en <code>/resumen</code> como «sin presupuesto» y no calcula desvío.
+      </p>
+
+      <div class="note info">
+        <span class="tag">Por qué se separan las columnas</span>
+        <p><code>gastado</code> es una fórmula que suma el Detalle por categoría y subcategoría.
+        <code>desvio</code> es gastado menos presupuesto, y queda en blanco si no cargaste
+        presupuesto. Así el bot nunca necesita calcular: solo lee el resultado.</p>
+      </div>
+
+      <h3>Editar a mano está bien</h3>
+      <p>
+        La planilla no es un backend intocable: es tu planilla. Corregir un monto, cambiar una
+        categoría, borrar una fila duplicada o partir un gasto en dos son operaciones normales. El
+        bot lee lo que encuentre la próxima vez. La única precaución es no romper la estructura:
+        encabezados y fórmulas quietos.
+      </p>
+    </section>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="problemas">
+      <p class="kicker">Cuando algo sale mal</p>
+      <h2>Problemas y cómo se resuelven</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pasa esto</th><th>Por qué</th><th>Qué hacés</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>«Todavía no existe la hoja del mes»</td>
+              <td>Es un mes nuevo y nadie lo creó.</td>
+              <td>Corré <code>/nuevomes</code> y volvé a mandar el gasto.</td>
+            </tr>
+            <tr>
+              <td>«La primera línea debe ser el monto»</td>
+              <td>El mensaje arranca con un número pero no es un monto válido.</td>
+              <td>Revisá el formato: <code>5.000</code> sí, <code>5,000</code> se lee como cinco
+              pesos.</td>
+            </tr>
+            <tr>
+              <td>«No reconocí la categoría»</td>
+              <td>Ninguna línea es una categoría con subcategoría válida.</td>
+              <td>Mirá <code>/categorias</code> y escribila con dos palabras.</td>
+            </tr>
+            <tr>
+              <td>«Falta el detalle»</td>
+              <td>Todas las líneas se reconocieron como otros campos.</td>
+              <td>Agregá una línea describiendo el gasto.</td>
+            </tr>
+            <tr>
+              <td>«Expiró, cargá el gasto de nuevo»</td>
+              <td>Pasaron más de 10 minutos desde que apareció la confirmación.</td>
+              <td>Mandá el mensaje otra vez. Nada quedó a medio guardar.</td>
+            </tr>
+            <tr>
+              <td>El bot ignora tu mensaje</td>
+              <td>La primera línea no empieza con número, o el formulario de <code>/cuota</code>
+              está abierto, o no estás en la lista de autorizados.</td>
+              <td>Verificá que el monto vaya primero. Si estabas en <code>/cuota</code>, terminalo.</td>
+            </tr>
+            <tr>
+              <td>Cargaste un gasto mal y ya confirmaste</td>
+              <td>No hay comando para editar ni borrar.</td>
+              <td>Abrí la planilla con <code>/sheet</code> y corregí la fila en el Detalle.</td>
+            </tr>
+            <tr>
+              <td>Una cuota entró dos veces</td>
+              <td>Se dio de alta con «este mes» y además ya venía cargada.</td>
+              <td>Borrá la fila repetida del Detalle y revisá <code>cuota_actual</code> en la hoja
+              <code>Cuotas</code>.</td>
+            </tr>
+            <tr>
+              <td>El resumen no suma un gasto</td>
+              <td>La categoría o la subcategoría de esa fila tienen un typo, así que la fórmula no
+              la encuentra.</td>
+              <td>Corregí la fila en el Detalle: tiene que decir exactamente lo mismo que el
+              Resumen.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note stop">
+        <span class="tag">Lo único irreversible</span>
+        <p>Borrar una hoja de mes de la planilla. Se van los gastos de ese mes y no hay copia en
+        ningún otro lado: el bot no guarda nada propio. Si querés archivar un mes, duplicá la hoja
+        en lugar de tocar la original.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════ SECCIÓN DESTACADA ═══════════════ -->
+    <section id="referencia" class="feature">
+      <p class="badge"><span class="dot"></span>★ Para tener a mano</p>
+      <h2>Referencia rápida</h2>
+
+      <h3>La plantilla de un gasto</h3>
+      <pre><code>monto              ← siempre primero, obligatorio
+detalle            ← obligatorio
+categoria subcat   ← obligatorio, dos palabras
+medio              ← opcional
+Nombre             ← opcional
+dd/mm              ← opcional
+revisar            ← opcional</code></pre>
+
+      <h3>Todos los comandos</h3>
+      <div class="cmds">
+        <div class="cmd write"><code>/nuevomes</code><span>Crea el mes y mete las cuotas activas</span></div>
+        <div class="cmd write"><code>/cuota</code><span>Da de alta una cuota nueva, paso a paso</span></div>
+        <div class="cmd read"><code>/resumen</code><span>Presupuesto contra gastado del mes</span></div>
+        <div class="cmd read"><code>/categoria &lt;nombre&gt; [YYYY-MM]</code><span>Detalle de una categoría</span></div>
+        <div class="cmd read"><code>/gastos</code><span>Todos los gastos del mes</span></div>
+        <div class="cmd read"><code>/categorias</code><span>Categorías y subcategorías válidas</span></div>
+        <div class="cmd read"><code>/mediosdepago</code><span>Medios de pago válidos</span></div>
+        <div class="cmd read"><code>/formato</code><span>Cómo se escribe un gasto</span></div>
+        <div class="cmd read"><code>/sheet</code><span>Link a la planilla</span></div>
+        <div class="cmd read"><code>/help</code><span>Todo lo anterior, resumido</span></div>
+      </div>
+      <p class="sub">
+        Los dos primeros escriben en la planilla; el resto solo leen, así que probarlos no rompe
+        nada.
+      </p>
+
+      <h3>Los números para recordar</h3>
+      <ul class="numbers">
+        <li><b>10 min</b><span>para confirmar un gasto antes de que expire</span></li>
+        <li><b>30 min</b><span>de vida del formulario de <code>/cuota</code></span></li>
+        <li><b>21:30</b><span>el recordatorio diario en el chat</span></li>
+        <li><b>1 ×&nbsp;mes</b><span><code>/nuevomes</code>; repetirlo no hace daño</span></li>
+      </ul>
+
+      <footer>
+        <p>
+          Los nombres de las personas, las categorías, los medios de pago y el chat del
+          recordatorio son propios de cada instalación. Las categorías y los medios se editan
+          cuando quieras desde la hoja <code>Config</code>; el resto se define al instalar el bot.
+        </p>
+      </footer>
+    </section>
+  </main>
+</div>
+</body>
+</html>
